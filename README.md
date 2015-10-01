@@ -69,3 +69,11 @@ files to monitor. These are standard google docs queries, see the
 gd.conf file for examples. Each query can only return 1000 files,
 so if you want to monitor more, you will need to define multiple
 smaller queries (this is a Google API limitation).
+
+## Troubleshooting
+
+If you get: smtplib.SMTPAuthenticationError: (534... when using gmail
+you need to enable less secure access at https://www.google.com/settings/u/1/security/lesssecureapps
+
+Remember, only 1000 docs per query, so if you get a warning about having
+to many files returned it's time to break up the query.
