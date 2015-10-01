@@ -7,6 +7,11 @@
 This code is based upon the gitdriver code that can be found
 here https://github.com/larsks/gitdriver
 
+## Requirements
+- python2
+- pip install pyyaml
+- pip install requests
+
 ## Options
 
 - `--config CONFIG`, `-f CONFIG` -- Path to configuration file
@@ -36,6 +41,11 @@ this application, the Drive API [Python quickstart][] has links to the
 necessary steps.
 
 [python quickstart]: https://developers.google.com/drive/quickstart-python#step_1_enable_the_drive_api
+
+- Create a Project
+- Set the app name on the Oauth consent screen (the one to the right)
+- Add an OAuth client ID (I use gdocmonitor as name)
+- copy the client ID and client secret in your gd.conf (see below)
 
 ## Configuration
 
