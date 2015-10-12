@@ -9,6 +9,7 @@ import time
 
 from drive import GoogleDrive, DRIVE_RW_SCOPE
 from email.mime.text import MIMEText
+from pyslack import SlackClient
 
 # Load the file list with last dates
 from myfilelist import *
@@ -26,6 +27,9 @@ def parse_args():
     p.add_argument('--interval', '-i', default=0, type=int, help="Repeat scan in <interval> minutes")
     p.add_argument('--update', '-u', action='store_true', help="Update the list of monitored documents and modification dates")
     p.add_argument('--queries', '-q', help="Queries to run in google drive, repeat option for multiple queries")
+    p.add_argument('--slackroom', '-r', default='', help="Slack room to use")
+    p.add_argument('--slacktoken', '-g', default='', help="Slack token to use (https://api.slack.com/web)")
+    p.add_argument('--slackuser', '-j', default='', help="Slack user name to use")
     p.add_argument('--verbose', '-v', action='store_true', help="Verbose output")
 
     return p.parse_args()
@@ -86,6 +90,21 @@ def main():
     except:
         pass
     try:
+        if cfg['slackroom'] != "":
+            opts.slackroom = cfg['slackroom']
+    except:
+        pass
+    try:
+        if cfg['slacktoken'] != "":
+            opts.slacktoken = cfg['slacktoken']
+    except:
+        pass
+    try:
+        if cfg['slackuser'] != "":
+            opts.slackuser = cfg['slackuser']
+    except:
+        pass
+    try:
         if cfg['verbose'] != "":
             opts.verbose = bool(cfg['verbose'])
     except:
@@ -103,6 +122,8 @@ def main():
         print("interval: " + str(opts.interval))
         print("update: " + str(opts.update))
         print("queries: " + str(opts.queries))
+        print("slack room: " + str(opts.slackroom))
+        print("slack user: " + str(opts.slackuser))
     
     gd = GoogleDrive(
             client_id=cfg['googledrive']['client_id'],
@@ -134,8 +155,11 @@ def main():
         # Track if there where changes
         foundChanges = False
 
-        # A mail message to send
-        messageBody = ""
+        # A mail message to send via mail
+        mailMessageBody = ""
+
+        # A message to be sent via slack
+        slackMessageBody = ""
 
         # Iterate over the documents we monitor
         for doc,modifiedDate in docs.items():
@@ -160,7 +184,8 @@ def main():
                 if modifiedDate != lastRevModifiedDate:
                     foundChanges = True
                     print("Document Change: " + title + " (" + editLink + ")")
-                    messageBody += '<li><a href="' + editLink + '">' + title + '</a></li>' + os.linesep
+                    mailMessageBody += '<li><a href="' + editLink + '">' + title + '</a></li>' + os.linesep
+                    slackMessageBody += '<' + editLink + '|*' + title + '*>' + os.linesep
                     docs[md['id']] = lastRevModifiedDate
 
         # Write out the new files list and dates
@@ -179,17 +204,23 @@ def main():
             # put new file in place
             os.rename('myfilelist.py.new', 'myfilelist.py')
 
+        if opts.slackuser != "" and opts.slackroom != "" and opts.slacktoken != "" and slackMessageBody != "":
+            print("Sending slack with changes")
+            
+            client = SlackClient(opts.slacktoken)
+            client.chat_post_message("#" + opts.slackroom, ">>> <!here|here> The following documents have been changed since the last scan" + os.linesep + slackMessageBody, username=opts.slackuser)
+            
         # Send a mail with the changes
         #
         # If you get: smtplib.SMTPAuthenticationError: (534... when using gmail
         #   you need to enable less secure access at https://www.google.com/settings/u/1/security/lesssecureapps
         #
-        if opts.frommail != "" and messageBody != "":
+        if opts.frommail != "" and mailMessageBody != "":
             print("Sending email with changes")
 
-            finalMessageBody = "<html><head></head><body><ul>" + messageBody + "</ul></body>"
+            finalMessageBody = "<html><head></head><body><ul>" + mailMessageBody + "</ul></body>"
 
-            msg = MIMEText(messageBody, 'html')
+            msg = MIMEText(finalMessageBody, 'html')
             msg['Subject'] = "The following documents have been changed since the last scan"
             msg['From'] = opts.frommail
             msg['To'] = ', '.join(opts.tomail)

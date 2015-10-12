@@ -11,6 +11,7 @@ here https://github.com/larsks/gitdriver
 - python2
 - pip install pyyaml
 - pip install requests
+- pip install pyslack-real
 
 ## Options
 
@@ -25,6 +26,9 @@ here https://github.com/larsks/gitdriver
 - `--interval`, `-i` -- Repeat scan in <interval> minutes
 - `--update`, `-u` -- Update the list of monitored documents and modification dates
 - `--queries`, `-q` -- Queries to run in google drive, repeat option for multiple queries
+- '--slackroom', '-r' -- Slack room to use
+- '--slacktoken', '-g' -- Slack token to use (https://api.slack.com/web)
+- '--slackuser', '-j' -- Slack user name to use
 - `--verbose`, `-v` -- Verbose output
 
 Note that the gd.conf file is a Yaml file (example included) that allows you
