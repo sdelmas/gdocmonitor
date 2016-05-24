@@ -198,7 +198,8 @@ def main():
 
             # Iterate over the documents we monitor
             for doc,modifiedDate in docs.items():
-                f.write('docs["' + doc + '"] = "' + modifiedDate + '"\n')
+                if modifiedDate is not None:
+                    f.write('docs["' + doc + '"] = "' + modifiedDate + '"\n')
             f.close()
 
             # put new file in place
