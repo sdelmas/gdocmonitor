@@ -173,8 +173,11 @@ class GoogleDrive(object):
         r = self.session.get('%s/files/%s/revisions' % (
             DRIVE_URI, fid)).json()
 
-        for rev in r['items']:
-            yield rev
+        try:
+            for rev in r['items']:
+                yield rev
+        except KeyError:
+            return
 
 if __name__ == '__main__':
     cfg = yaml.load(open('gd.conf'))
