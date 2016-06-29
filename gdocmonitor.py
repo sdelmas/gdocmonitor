@@ -118,7 +118,6 @@ def main():
         print("smtp port: " + str(opts.smtpport))
         print("use ssl: " + str(opts.usessl))
         print("username: " + opts.username)
-        print("password: " + opts.password)
         print("interval: " + str(opts.interval))
         print("update: " + str(opts.update))
         print("queries: " + str(opts.queries))
@@ -146,7 +145,7 @@ def main():
                     md = gd.get_file_metadata(file['id'])
                     if md['mimeType'] == 'application/vnd.google-apps.document':
                         print("Adding document: " + md['title'] + " (" + file['id'] + ")")
-                        docs[file['id']] = {}
+                        docs[file['id']] = None
 
             # Check that we are not getting too many documents
             if counter > 999:
@@ -169,6 +168,8 @@ def main():
 
             if md['mimeType'] == 'application/vnd.google-apps.document':
                 # Get some metadata for the file we track
+                if modifiedDate is None:
+                    modifiedDate=md['modifiedDate']
                 title = md['title']
                 try:
                     md['embedLink'] 
@@ -183,10 +184,18 @@ def main():
                     lastRevModifiedDate = rev['modifiedDate']
                 if modifiedDate != lastRevModifiedDate:
                     foundChanges = True
-                    print("Document Change: " + title + " (" + editLink + ")")
-                    mailMessageBody += '<li><a href="' + editLink + '">' + title + '</a></li>' + os.linesep
-                    slackMessageBody += '<' + editLink + '|*' + title + '*>' + os.linesep
-                    docs[md['id']] = lastRevModifiedDate
+                    if lastRevModifiedDate is None:
+                        print("Need Edit access to: " + title + " (" + editLink + ")")
+                        mailMessageBody += '<li><a href="' + editLink + '">' + title + ' (need edit access)</a></li>' + os.linesep
+                        slackMessageBody += '<' + editLink + '|*' + title + ' (need edit access)*>' + os.linesep
+                    else:
+                        print("Document Change: " + title + " (" + editLink + ")")
+                        mailMessageBody += '<li><a href="' + editLink + '">' + title + '</a></li>' + os.linesep
+                        slackMessageBody += '<' + editLink + '|*' + title + '*>' + os.linesep
+                    if lastRevModifiedDate is None:
+                        docs[md['id']] = modifiedDate
+                    else:
+                        docs[md['id']] = lastRevModifiedDate
 
         # Write out the new files list and dates
         if opts.update and foundChanges:
@@ -199,7 +208,7 @@ def main():
             # Iterate over the documents we monitor
             for doc,modifiedDate in docs.items():
                 if modifiedDate is not None:
-                    f.write('docs["' + doc + '"] = "' + modifiedDate + '"\n')
+               	    f.write('docs["' + doc + '"] = "' + modifiedDate + '"\n')
             f.close()
 
             # put new file in place
@@ -209,7 +218,7 @@ def main():
             print("Sending slack with changes")
             
             client = SlackClient(opts.slacktoken)
-            client.chat_post_message("#" + opts.slackroom, ">>> <!here|here> The following documents have been changed since the last scan" + os.linesep + slackMessageBody, username=opts.slackuser)
+            client.chat_post_message("#" + opts.slackroom, ">>> The following documents have been changed since the last scan" + os.linesep + slackMessageBody, username=opts.slackuser)
             
         # Send a mail with the changes
         #
