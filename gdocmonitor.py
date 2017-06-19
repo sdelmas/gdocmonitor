@@ -166,6 +166,9 @@ def main():
             # an exception if the file does not exist.
             md = gd.get_file_metadata(doc)
 
+            if not md.has_key('mimeType'):
+                continue
+           
             if md['mimeType'] == 'application/vnd.google-apps.document':
                 # Get some metadata for the file we track
                 if modifiedDate is None:
@@ -186,8 +189,12 @@ def main():
                     foundChanges = True
                     if lastRevModifiedDate is None:
                         print("Need Edit access to: " + title + " (" + editLink + ")")
-                        mailMessageBody += '<li><a href="' + editLink + '">' + title + ' (need edit access)</a></li>' + os.linesep
-                        slackMessageBody += '<' + editLink + '|*' + title + ' (need edit access)*>' + os.linesep
+                        # No way for us to know whether this doc changed. If
+                        # the owner wants tracking they have to give edit
+                        # edit access... only printing that in the console
+                        # though (too many docs with this condition)
+                        #mailMessageBody += '<li><a href="' + editLink + '">' + title + ' (need edit access)</a></li>' + os.linesep
+                        #slackMessageBody += '<' + editLink + '|*' + title + ' (need edit access)*>' + os.linesep
                     else:
                         print("Document Change: " + title + " (" + editLink + ")")
                         mailMessageBody += '<li><a href="' + editLink + '">' + title + '</a></li>' + os.linesep
