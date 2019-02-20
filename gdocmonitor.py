@@ -24,10 +24,11 @@ def parse_args():
     p.add_argument('--usessl', '-l', action='store_true', help="Use SSL for SMTP")
     p.add_argument('--username', '-e', default='', help="SMTP user name")
     p.add_argument('--password', '-p', default='', help="SMTP user password")
-    p.add_argument('--interval', '-i', default=0, type=int, help="Repeat scan in <interval> minutes")
+    p.add_argument('--interval', '-i', default=0, type=int, help="Repeat scan in <interval> minutes (0 = no repeat)")
     p.add_argument('--update', '-u', action='store_true', help="Update the list of monitored documents and modification dates")
     p.add_argument('--queries', '-q', help="Queries to run in google drive, repeat option for multiple queries")
     p.add_argument('--slackroom', '-r', default='', help="Slack room to use")
+    p.add_argument('--html', '-t', action='store_true', help="Generate a HTML report")
     p.add_argument('--slacktoken', '-g', default='', help="Slack token to use (https://api.slack.com/web)")
     p.add_argument('--slackuser', '-j', default='', help="Slack user name to use")
     p.add_argument('--verbose', '-v', action='store_true', help="Verbose output")
@@ -123,7 +124,11 @@ def main():
         print("queries: " + str(opts.queries))
         print("slack room: " + str(opts.slackroom))
         print("slack user: " + str(opts.slackuser))
-    
+   
+    # Generate a html report
+    if opts.html:
+        print("<html>")
+ 
     gd = GoogleDrive(
             client_id=cfg['googledrive']['client_id'],
             client_secret=cfg['googledrive']['client_secret'],
@@ -146,6 +151,9 @@ def main():
                     if md['mimeType'] == 'application/vnd.google-apps.document':
                         print("Adding document: " + md['title'] + " (" + file['id'] + ")")
                         docs[file['id']] = None
+
+                    if opts.html:
+                      print("  html" + md['title'])
 
             # Check that we are not getting too many documents
             if counter > 999:
@@ -260,6 +268,10 @@ def main():
             break
         else:
             time.sleep(opts.interval * 60)
+
+    # Wrap up the report
+    if opts.html:
+        print("</html>")
 
 if __name__ == '__main__':
     main()
